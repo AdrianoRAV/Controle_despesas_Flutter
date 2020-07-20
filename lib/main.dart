@@ -1,117 +1,228 @@
-import 'package:flutter/material.dart';
+import 'package:appcontroledespesas/graph_widget.dart';
 
-void main() {
-  runApp(MyApp());
-}
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Controle Despesas',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blue,
-        // This makes the visual density adapt to the platform that you run
-        // the app on. For desktop platforms, the controls will be smaller and
-        // closer together (more dense) than on mobile platforms.
-        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: HomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class HomePage extends StatefulWidget {
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _HomePageState createState() => _HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _HomePageState extends State<HomePage> {
+  PageController _controller;
+  int currentPage = 9;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = PageController(
+      initialPage: currentPage,
+      viewportFraction: 0.4,
+    );
+  }
+
+  Widget _bottomAction(IconData icon) {
+    return InkWell(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Icon(icon),
+      ),
+      onTap: () {},
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
+      bottomNavigationBar: BottomAppBar(
+        notchMargin: 8.0,
+        shape: CircularNotchedRectangle(),
+        child: Row(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
+            _bottomAction(FontAwesomeIcons.history),
+            _bottomAction(FontAwesomeIcons.chartPie),
+            SizedBox(width: 48.0),
+            _bottomAction(FontAwesomeIcons.wallet),
+            _bottomAction(Icons.settings),
           ],
         ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
         child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+        onPressed: () {},
+      ),
+      body: _body(),
+    );
+  }
+
+  Widget _body() {
+    return SafeArea(
+      child: Column(
+        children: <Widget>[
+          _selector(),
+          _expenses(),
+          _graph(),
+          Container(
+            color: Colors.blueAccent.withOpacity(0.15),
+            height: 24.0,
+          ),
+          _list(),
+        ],
+      ),
+    );
+  }
+
+  Widget _pageItem(String name, int position) {
+    var _alignment;
+    final selected = TextStyle(
+      fontSize: 20.0,
+      fontWeight: FontWeight.bold,
+      color: Colors.blueGrey,
+    );
+    final unselected = TextStyle(
+      fontSize: 20.0,
+      fontWeight: FontWeight.normal,
+      color: Colors.blueGrey.withOpacity(0.4),
+    );
+
+    if (position == currentPage) {
+      _alignment = Alignment.center;
+    } else if (position > currentPage) {
+      _alignment = Alignment.centerRight;
+    } else {
+      _alignment = Alignment.centerLeft;
+    }
+
+    return Align(
+      alignment: _alignment,
+      child: Text(name,
+        style: position == currentPage ? selected : unselected,
+      ),
+    );
+  }
+
+  Widget _selector() {
+    return SizedBox.fromSize(
+      size: Size.fromHeight(70.0),
+      child: PageView(
+        onPageChanged: (newPage) {
+          setState(() {
+            currentPage = newPage;
+          });
+        },
+        controller: _controller,
+        children: <Widget>[
+          _pageItem("Janeiro", 0),
+          _pageItem("Fevereiro", 1),
+          _pageItem("Março", 2),
+          _pageItem("Abril", 3),
+          _pageItem("Maio", 4),
+          _pageItem("Junho", 5),
+          _pageItem("Julho", 6),
+          _pageItem("Agosto", 7),
+          _pageItem("Setembro", 8),
+          _pageItem("Outubro", 9),
+          _pageItem("Novembro", 10),
+          _pageItem("Decembro", 11),
+        ],
+      ),
+    );
+  }
+
+  Widget _expenses() {
+    return Column(
+      children: <Widget>[
+        Text("\$2361,41",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 40.0,
+          ),
+        ),
+        Text("Total gastos",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16.0,
+            color: Colors.blueGrey,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _graph() {
+    return Container(
+      height: 250.0,
+      child: GraphWidget(),
+    );
+  }
+
+  Widget _item(IconData icon, String name, int percent, double value) {
+    return ListTile(
+      leading: Icon(icon, size: 32.0,),
+      title: Text(name,
+        style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20.0
+        ),
+      ),
+      subtitle: Text("$percent% de gastos",
+        style: TextStyle(
+          fontSize: 16.0,
+          color: Colors.blueGrey,
+        ),
+      ),
+      trailing: Container(
+        decoration: BoxDecoration(
+          color: Colors.blueAccent.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(5.0),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text("\$$value",
+            style: TextStyle(
+              color: Colors.blueAccent,
+              fontWeight: FontWeight.w500,
+              fontSize: 16.0,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _list() {
+    return Expanded(
+      child: ListView.separated(
+        itemCount: 15,
+        itemBuilder: (BuildContext context, int index) =>
+            _item(FontAwesomeIcons.shoppingCart, "Shopping", 14, 145.12),
+        separatorBuilder: (BuildContext context, int index) {
+          return Container(
+            color: Colors.blueAccent.withOpacity(0.15),
+            height: 8.0,
+          );
+        },
+      ),
     );
   }
 }
