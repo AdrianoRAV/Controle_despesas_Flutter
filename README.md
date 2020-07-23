@@ -1,7 +1,6 @@
 # appcontroledespesas
 
 A new Flutter application.
-XXX
 ## Getting Started
 
 This project is a starting point for a Flutter application.
