@@ -1,5 +1,7 @@
 import 'package:appcontroledespesas/graph_widget.dart';
 
+import 'package:appcontroledespesas/month_widget.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -9,7 +11,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Despesas Totais',
+      debugShowCheckedModeBanner: false,
+      title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -26,7 +29,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   PageController _controller;
   int currentPage = 9;
-
+  Stream<QuerySnapshot> _query;
 
   @override
   void initState() {
@@ -80,13 +83,17 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         children: <Widget>[
           _selector(),
-          _expenses(),
-          _graph(),
-          Container(
-            color: Colors.blueAccent.withOpacity(0.15),
-            height: 24.0,
-          ),
-          _list(),
+          StreamBuilder<QuerySnapshot>(
+            stream: _query,
+            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> data) {
+              if (data.hasData) {
+                return MonthWidget(documents: data.data.documents);
+              }
+              return Center(
+                child: CircularProgressIndicator(),
+              );
+            },
+          )
         ],
       ),
     );
@@ -115,7 +122,8 @@ class _HomePageState extends State<HomePage> {
 
     return Align(
       alignment: _alignment,
-      child: Text(name,
+      child: Text(
+        name,
         style: position == currentPage ? selected : unselected,
       ),
     );
@@ -128,6 +136,10 @@ class _HomePageState extends State<HomePage> {
         onPageChanged: (newPage) {
           setState(() {
             currentPage = newPage;
+            _query = Firestore.instance
+                .collection('despesas')
+                .where("month", isEqualTo: currentPage + 1)
+                .snapshots();
           });
         },
         controller: _controller,
@@ -143,85 +155,8 @@ class _HomePageState extends State<HomePage> {
           _pageItem("Setembro", 8),
           _pageItem("Outubro", 9),
           _pageItem("Novembro", 10),
-          _pageItem("Decembro", 11),
+          _pageItem("Dezembro", 11),
         ],
-      ),
-    );
-  }
-
-  Widget _expenses() {
-    return Column(
-      children: <Widget>[
-        Text("\$2361,41",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 40.0,
-          ),
-        ),
-        Text("Total gastos",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16.0,
-            color: Colors.blueGrey,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _graph() {
-    return Container(
-      height: 250.0,
-      child: GraphWidget(),
-    );
-  }
-
-  Widget _item(IconData icon, String name, int percent, double value) {
-    return ListTile(
-      leading: Icon(icon, size: 32.0,),
-      title: Text(name,
-        style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20.0
-        ),
-      ),
-      subtitle: Text("$percent% de gastos",
-        style: TextStyle(
-          fontSize: 16.0,
-          color: Colors.blueGrey,
-        ),
-      ),
-      trailing: Container(
-        decoration: BoxDecoration(
-          color: Colors.blueAccent.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(5.0),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text("\$$value",
-            style: TextStyle(
-              color: Colors.blueAccent,
-              fontWeight: FontWeight.w500,
-              fontSize: 16.0,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _list() {
-    return Expanded(
-      child: ListView.separated(
-        itemCount: 15,
-        itemBuilder: (BuildContext context, int index) =>
-            _item(FontAwesomeIcons.shoppingCart, "Shopping", 14, 145.12),
-        separatorBuilder: (BuildContext context, int index) {
-          return Container(
-            color: Colors.blueAccent.withOpacity(0.15),
-            height: 8.0,
-          );
-        },
       ),
     );
   }
